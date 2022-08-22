@@ -1,0 +1,111 @@
+obfunc init_cell() {localobj model
+	if (strcmp($s1, "HL23MN1") == 0){
+		model = new HNTemplate("morphologies/HL23MN1.swc", "HL23MN1")
+	}
+	if (strcmp($s1, "HL23PN1") == 0){
+		model = new HNTemplate("morphologies/HL23PN1.swc", "HL23PN1")
+	}
+	if (strcmp($s1, "HL23BN1") == 0 ) {
+		model = new HNTemplate("morphologies/HL23BN1.swc", "HL23BN1")
+	}
+	if (strcmp($s1, "HL23VN1") == 0 ) {
+		model = new HNTemplate("morphologies/HL23VN1.swc", "HL23VN1")
+	}
+	if (strcmp($s1, "HL4PN1") == 0 ) {
+		model = new HNTemplate("morphologies/HL4PN1.swc", "HL4PN1")
+	}
+	if (strcmp($s1, "HL5PN1") == 0 ) {
+		model = new HNTemplate("morphologies/HL5PN1.swc", "HL5PN1")
+	}
+	return model
+}
+obfunc show_syn(){localobj s
+	s = new Shape($o1.all)
+	for(i=0;i<$o2.count();i+=1){
+		s.point_mark($o2.o(i),2)
+	}
+	s.rotate(0,0,0,0,0,get_rotation_angle($o1.cell_name))
+	s.show(0)
+	s.exec_menu ("View = plot")
+	return s
+}
+func get_rotation_angle(){
+	if ((strcmp($s1, "HL23PN1") == 0)){
+		return 2.7
+	}
+	if ((strcmp($s1, "HL23MN1") == 0)){
+		return 3.2
+	}
+	if ((strcmp($s1, "HL23BN1") == 0)){
+		return 1.25
+	}
+	if ((strcmp($s1, "HL23VN1") == 0)){
+		return 0
+	}
+	if ((strcmp($s1, "HL4PN1") == 0)){
+		return 3.2
+	}
+	if ((strcmp($s1, "HL5PN1") == 0)){
+		return 3.8
+	}
+}
+
+obfunc show_distribution(){localobj d,gih,g2
+	d = new Vector()
+	gih = new Vector()
+	forsec $o1.apical {
+		d2 = distance(1)
+		d.append(d2)
+		gih.append(gbar_Ih(1))
+	}
+	g2 = new Graph()
+	graphList[0].append(g2)
+	for(i=0 ; i < gih.size() ; i+=1){
+		g2.mark(d.x[i],gih.x[i],"o",6)
+	}
+	g2.exec_menu ("View = plot")
+	return g2
+}
+
+obfunc show_cell(){localobj s
+	s = new Shape($o1.all)
+	s.rotate(0,0,0,0,0,get_rotation_angle($o1.cell_name))
+	s.show(0)
+	s.exec_menu ("View = plot")
+	return s
+}
+
+obfunc show_all_cells(){localobj s
+	s = new Shape()
+	s.rotate(0,0,0,0,0,get_rotation_angle($o1.cell_name))
+	s.show(0)
+	s.exec_menu ("View = plot")
+	return s
+}
+
+obfunc record_plot(){localobj vvec, tvec, gV, vecs
+	//==== recording settings ====
+	vvec = new Vector()
+	tvec = new Vector()
+	vecs = new List()
+	
+	access $o1.soma
+	vvec.record(&v(0.5))
+	tvec.record(&t)
+
+	//==== plot settings ====
+	gV = new Graph()
+	gV.size(0,tstop, $2, $3)
+	graphList[0].append(gV)
+	access $o1.soma
+	gV.addvar("Soma","v(0.5)",1,1)
+	vecs.append(vvec)
+	vecs.append(tvec)
+	return vecs
+}
+proc save_vec(){localobj save_f
+	save_f = new File()
+	save_f.wopen($s1)
+	$o2.printf(save_f)
+	save_f.close()
+}

@@ -1,0 +1,82 @@
+proc biophys_HL5PN1(){
+	forsec $o1.all {
+		insert pas
+		insert Ih
+		Ra = 100
+		cm = 0.9
+		e_pas = -88.05900508094575
+		g_pas = 1.0199704947118803e-06
+		gbar_Ih = 1.737556184697235e-05
+		shift1_Ih = 144.76545935424588
+		shift2_Ih = 14.382865335237211
+		shift3_Ih = -28.179477866349245
+		shift4_Ih = 99.18311385307702
+		shift5_Ih = 16.42000098505615
+		shift6_Ih = 26.699880497099517
+	}
+	$o1.distribute_channels("apic","gbar_Ih",5,0.5,24,950,-285,$o1.soma.gbar_Ih)
+	$o1.distribute_channels("dend","gbar_Ih",5,0.5,24,950,-285,$o1.soma.gbar_Ih)
+	$o1.distribute_channels("axon","gbar_Ih",5,0.5,24,950,-285,$o1.soma.gbar_Ih)
+	
+	forsec $o1.somatic {
+		insert NaTg
+		insert Nap
+		insert K_P
+		insert K_T
+		insert Kv3_1
+		insert SK
+		insert Im
+		insert Ca_HVA
+		insert Ca_LVA
+		insert CaDynamics
+		ek = -85
+		ena = 50
+		gbar_NaTg = 0.2868981428991897
+		vshiftm_NaTg = 0
+		vshifth_NaTg = 10
+		slopem_NaTg = 9
+		slopeh_NaTg = 6
+		gbar_Nap = 0.00027931820216872737
+		gbar_K_P = 0.5590195014145816
+		gbar_K_T = 0.5271468420820363
+		gbar_Kv3_1 = 0.3172435883971597
+		vshift_Kv3_1 = 0
+		gbar_SK = 1.0476318872272612
+		gbar_Im = 0.00040267105530431024
+		gbar_Ca_HVA = 1.8595424327816357e-05
+		gbar_Ca_LVA = 0.004922323805158312
+		gamma_CaDynamics = 0.0005
+		decay_CaDynamics = 499.53138539376255
+	}
+	forsec $o1.axonal {
+		insert NaTg
+		insert Nap
+		insert K_P
+		insert K_T
+		insert Kv3_1
+		insert SK
+		insert Im
+		insert Ca_HVA
+		insert Ca_LVA
+		insert CaDynamics
+		ek = -85
+		ena = 50
+		gbar_NaTg = 0.0020817650993738114
+		vshiftm_NaTg = 0
+		vshifth_NaTg = 10
+		slopem_NaTg = 9
+		slopeh_NaTg = 6
+		gbar_Nap = 0.0022831695251548465
+		gbar_K_P = 0.004120756519288199
+		gbar_K_T = 1.0918862733252879
+		gbar_Kv3_1 = 1.4723945773672162
+		vshift_Kv3_1 = 0
+		gbar_SK = 0.012712192806938725
+		gbar_Im = 2.8754501298897446e-05
+		gbar_Ca_HVA = 4.972472476572366e-06
+		gbar_Ca_LVA = 0.007126033046774471
+		gamma_CaDynamics = 0.0005
+		decay_CaDynamics = 447.5127627121552
+	}
+}
+

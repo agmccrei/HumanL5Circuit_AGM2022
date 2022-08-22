@@ -1,0 +1,83 @@
+proc biophys_HL5PN1(){
+	// $o1.delete_axon_BPO()
+	forsec $o1.all {
+		insert pas
+		insert Ih
+		Ra = 100
+		cm = 0.9
+		e_pas = -96.85372446389488
+		g_pas = 5.512995011980877e-06
+		gbar_Ih = 2.3373103535470546e-05
+		shift1_Ih = 144.76545935424588
+		shift2_Ih = 14.382865335237211
+		shift3_Ih = -28.179477866349245
+		shift4_Ih = 99.18311385307702
+		shift5_Ih = 16.42000098505615
+		shift6_Ih = 26.699880497099517
+	}
+	$o1.distribute_channels("apic","gbar_Ih",5,0.5,24,950,-285,$o1.soma.gbar_Ih)
+	$o1.distribute_channels("dend","gbar_Ih",5,0.5,24,950,-285,$o1.soma.gbar_Ih)
+	$o1.distribute_channels("axon","gbar_Ih",5,0.5,24,950,-285,$o1.soma.gbar_Ih)
+
+	forsec $o1.somatic {
+		insert NaTg
+		insert Nap
+		insert K_P
+		insert K_T
+		insert Kv3_1
+		insert SK
+		insert Im
+		insert Ca_HVA
+		insert Ca_LVA
+		insert CaDynamics
+		ek = -85
+		ena = 50
+		gbar_NaTg = 0.2472059538463245
+		vshiftm_NaTg = 0
+		vshifth_NaTg = 10
+		slopem_NaTg = 9
+		slopeh_NaTg = 6
+		gbar_Nap = 0.0019950908543225733
+		gbar_K_P = 0.5441263808747847
+		gbar_K_T = 0.21871771487271185
+		gbar_Kv3_1 = 1.2404130390798245
+		vshift_Kv3_1 = 0
+		gbar_SK = 0.7134567719010443
+		gbar_Im = 0.0002474127002590248
+		gbar_Ca_HVA = 5.0689972278039955e-05
+		gbar_Ca_LVA = 0.008389733786855345
+		gamma_CaDynamics = 0.0005
+		decay_CaDynamics = 398.17201700517546
+	}
+	
+	forsec $o1.axonal {
+		insert NaTg
+		insert Nap
+		insert K_P
+		insert K_T
+		insert Kv3_1
+		insert SK
+		insert Im
+		insert Ca_HVA
+		insert Ca_LVA
+		insert CaDynamics
+		ek = -85
+		ena = 50
+		gbar_NaTg = 0.005881722698438126
+		vshiftm_NaTg = 0
+		vshifth_NaTg = 10
+		slopem_NaTg = 9
+		slopeh_NaTg = 6
+		gbar_Nap = 0.0015974746841645516
+		gbar_K_P = 1.2220940586325157
+		gbar_K_T = 1.4972670107562782
+		gbar_Kv3_1 = 0.0855046197696866
+		vshift_Kv3_1 = 0
+		gbar_SK = 0.013465428734598772
+		gbar_Im = 0.00036525674497314784
+		gbar_Ca_HVA = 2.7327051286155333e-05
+		gbar_Ca_LVA = 0.00022250442650174242
+		gamma_CaDynamics = 0.0005
+		decay_CaDynamics = 303.99890353583544
+	}
+}

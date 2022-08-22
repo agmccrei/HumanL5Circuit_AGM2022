@@ -1,0 +1,236 @@
+//initialization
+load_file("nrngui.hoc")
+load_file("import3d.hoc")
+load_file("models/Biophys.hoc")
+load_file("models/HNTemplate.hoc")
+load_file("cell_functions.hoc")
+
+//======================== settings ===================================
+
+objref cell
+strdef cell_type
+strdef file_name
+
+objref frequency_target, stims
+//===========config section, change for each run=======================
+	
+saving = 1 // 1 to save, 0 to not
+simulation_mode = 2 // 1 for single run	, 2 for multiple with frequency-current graph, 3 for simulating multiple stimuli
+cell_type = "HL5PN1" // define cell type
+
+// for sim mode 1
+step_current =  0 // for one run, simulation mode = 1
+
+// for sim mode 2
+// Nsteps_FI steps will be simulated until max_current is reached
+// the FI curve and step firings traces closest to the frequency targets will be saved
+frequency_target = new Vector()
+frequency_target.append(7, 12, 18)
+Nsteps_FI = 20 // number of steps per f-I curve
+max_current = 0.3 // max current to stimulate to
+
+// for sim mode 3
+// model will be stimulated for all the stims and save all firing traces
+stims = new Vector()
+stims.append(0.1, 0.2, 0.3)
+	
+//===================== simulation settings ========================
+
+v_init = -70.26846469899866
+tstop = 2000
+celsius = 34
+
+//======== creating cell object and simulation settings ===========
+cell = init_cell(cell_type)
+step_increment = max_current/Nsteps_FI // for multiple runs and FI curve, ignored if simulation mode is 1
+
+objref s
+s = show_cell(cell)
+
+//==================== stimulus settings ===========================
+
+objref st1
+
+access cell.soma
+st1 = new IClamp(0.5)
+st1.dur = 600
+st1.del = 1000
+st1.amp = step_current
+
+cell.soma st1
+
+//==================== record settings ==========================
+objref vvec, tvec, savv, savt
+vvec = new Vector()
+tvec = new Vector()
+
+access cell.soma
+tvec.record(&t)
+vvec.record(&v(0.5))
+
+objref apcvec, apc
+apcvec = new Vector()
+apc = new APCount(0.5)
+apc.thresh= -10
+apc.record(apcvec)
+
+//======================= plot settings ============================
+
+objref gV
+// graphs voltage vs time
+gV = new Graph()
+gV.size(0,tstop,-100,60)
+graphList[0].append(gV)
+access cell.soma
+gV.addvar("soma","v(0.5)",1,1)
+
+//============================= simulation ================================
+
+/*
+	Runs the simulation once with stimulus specified.
+*/
+proc run_once() {
+	init()
+	st1.amp = $1
+	run()
+	print "Testing ", cell_type
+	print "Stimulus of ", $1, " nA"
+	print "Action potentials: ", apcvec.c().size()
+}
+
+/*
+	Run multiple simulations of varying current and frequency, then rerun simulations with currents responsible for target frequency.
+*/
+proc run_multiple() {localobj all_currents, all_frequencies, save_all, graph_currents, graph_frequencies, gF
+	
+	strdef cs
+
+	graph_currents = new Vector()
+	graph_frequencies = new Vector()
+	all_frequencies = new Vector()
+	all_currents = new Vector()
+	st1.amp = 0
+	step_increment = $1
+	ind = 0
+	if (saving == 1) {
+		save_all = new File()
+		file_name = ""
+		sprint(file_name,"simdata/%s%s", cell_type, "_FI.txt")
+		save_all.wopen(file_name)
+	}
+	// increment step current and do a preliminary run
+	while (st1.amp < max_current) 	{
+		init()
+		st1.amp += step_increment
+		print "Run # ", ind+1, " with stimulus of : ", st1.amp, " nA"
+		ind += 1
+		run()
+		print "Number of action potentials: ", apcvec.c().size()
+		
+		all_frequencies.append(apcvec.c().size/(st1.dur / 1000))
+		all_currents.append(st1.amp)
+
+		sprint(cs, "%f %f", all_currents.x[ind-1], all_frequencies.x[ind-1])
+		if (saving == 1) {
+			save_all.printf(cs)
+			save_all.printf("\n")
+		}
+	}
+	if (saving == 1) {
+		save_all.close()
+	}
+	
+	// iterate over vectors to find the currents that produce target frequencies
+	
+	found_frequencies = 0
+	
+	for (i = 0; i < all_frequencies.size(); i+=1) {
+		
+		if (!(found_frequencies >= frequency_target.size())){
+			// if this frequency is higher than the
+			if (all_frequencies.x[i] >= frequency_target.x[found_frequencies]) {
+				if (i < 1) {
+					graph_currents.append(all_currents.x[i])
+					graph_frequencies.append(all_frequencies.x[i])
+				} else {
+					// find the closer frequency
+					later_dif = (abs(frequency_target.c().x[found_frequencies] - all_frequencies.c().x[i] ))
+					former_dif= (abs(frequency_target.c().x[found_frequencies] - all_frequencies.c().x[i-1] ))
+					if (former_dif < later_dif) {
+						graph_currents.append(all_currents.x[i-1])
+						graph_frequencies.append(all_frequencies.c().x[i-1])
+					} else {
+						graph_currents.append(all_currents.x[i])
+						graph_frequencies.append(all_frequencies.c().x[i])
+					}
+				}
+				found_frequencies+=1
+			}
+		}
+	}
+	// rerun with only selected step currents
+	for (i = 0; i < graph_currents.size(); i+=1) {
+		print graph_currents.x[i]
+		init()
+		st1.amp = graph_currents.x[i]
+		run()
+		if (saving == 1) {
+			file_name = ""
+			sprint(file_name,"simdata/%s%s%d%s", cell_type, "_step", i + 1, ".txt")
+			savv = new File()
+			savv.wopen(file_name)
+			vvec.printf(savv)
+			savv.close()
+		}
+	}
+	// save the time
+	if (saving == 1) {
+		file_name = ""
+		sprint(file_name,"simdata/%s%s", cell_type, "_time.txt")
+		savt = new File()
+		savt.wopen(file_name)
+		tvec.printf(savt)
+		savt.close()
+	}
+	// f-I curve
+	gF = new Graph()
+	gF.size(0,all_currents.c().max(),0, all_frequencies.c().max())
+	graphList[1].append(gF)
+	all_frequencies.c().line(gF, all_currents.c())
+	gF.flush()
+}
+
+proc run_stims(){
+	for (i = 0; i < $o1.size(); i+=1) {
+		init()
+		st1.amp = $o1.x[i]
+		run()
+		if (saving == 1) {
+			file_name = ""
+			sprint(file_name,"simdata/%s%s%d%s", cell_type, "_step", i + 1, ".txt")
+			savv = new File()
+			savv.wopen(file_name)
+			vvec.printf(savv)
+			savv.close()
+		}
+	}
+	// save the time
+	if (saving == 1) {
+		file_name = ""
+		sprint(file_name,"simdata/%s%s", cell_type, "_time.txt")
+		savt = new File()
+		savt.wopen(file_name)
+		tvec.printf(savt)
+		savt.close()
+	}
+}
+
+if (simulation_mode == 1) {
+	run_once(step_current)
+}
+if (simulation_mode == 2) {
+	run_multiple(step_increment)
+}
+if (simulation_mode == 3) {
+	run_stims(stims)
+}

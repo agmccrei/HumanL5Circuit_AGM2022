@@ -1,0 +1,90 @@
+load_file("nrngui.hoc")
+load_file("import3d.hoc")
+load_file("models/Biophys.hoc")
+load_file("models/HNTemplate.hoc")
+load_file("cell_functions.hoc")
+
+objref cell, diam_list, ref_points
+strdef cell_type, save_distance, save_rmp
+
+
+// ======== Initializaiton ================
+saving = 1 // 1 to save, 0 to not
+cell_type = "HL5PN1" // define cell type
+
+v_init = -69.5578657981518
+tstop = 500
+celsius = 34
+
+cell = init_cell(cell_type)
+
+objref s, loc, vvec, rest_v, where, sref, dist_list, rmp
+s = show_cell(cell)
+
+vvec = new Vector()
+rest_v = new Vector()
+dist_list = new Vector()
+rmp = new Vector()
+diam_list = new Vector()
+//for (i= 0; i<1; i+= 0.01){
+for (i= 1; i>0; i-= 0.05){
+
+	// Marks where resting membrane potential is being measured
+	dist = i*cell.getLongestBranch("apic")
+	loc = cell.locateSites("apic", dist)
+
+	if (i==0){
+		z = 0
+		//dist = i*cell.getLongestBranch("soma")
+		//loc = cell.locateSites("soma", dist)
+	}else{
+		access cell.apic[sec_num]
+			distance(0, seg_num)
+		for (n= 0; n<loc.count(); n+= 1){
+			access cell.apic[loc.o[n].x[0]]
+			if (distance(loc.o[n].x[1]) < 0.1*dist/i){
+				diam_list.append(cell.apic[loc.o[n].x[0]].diam())
+			}else{
+				diam_list.append(0)
+			}
+		}
+		z = diam_list.max_ind()
+	}
+	diam_list = new Vector()
+	sec_num = loc.o[z].x[0]
+
+	cell.apic[sec_num] sref = new SectionRef()
+	seg_num = loc.o[z].x[1]
+	access cell.apic[sec_num]
+	vvec.record(&v(seg_num))
+
+	where = new IClamp(seg_num)
+
+	s.point_mark(where,2)
+	s.flush()
+
+	// run simulation
+	init()
+	run()
+	print "Resting membrane is: ", vvec.x[20000], "mV at ", dist, "um away from the soma"
+	dist_list.append(dist)
+	rmp.append(vvec.x[20000])
+
+}
+// ========== Graphing RMP ================
+objref g
+g = new Graph()
+for(i=0 ; i < dist_list.size() ; i+=1){
+	g.mark(dist_list.x[i], rmp.x[i], "o", 6)
+	g.exec_menu ("View = plot")
+}
+
+// ============= Saving ===============
+if (saving == 1){
+	print "saving data..."
+	sprint (save_rmp, "simdata/rmp_%s.txt", cell_type)
+	sprint (save_distance, "simdata/distance_%s.txt", cell_type)
+	
+	save_vec(save_distance, dist_list)
+	save_vec(save_rmp, rmp)
+}

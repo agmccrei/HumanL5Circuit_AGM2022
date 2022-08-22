@@ -1,0 +1,27 @@
+
+Best #1: 
+[   ('g_pas', 4.96522833394821e-05),
+    ('e_pas', -82.39351353607623),
+    ('gbar_NaTgsomatic', 0.44143883536729284),
+    ('gbar_Napsomatic', 0.00032743398517591537),
+    ('gbar_K_Psomatic', 0.017370103988544338),
+    ('gbar_K_Tsomatic', 0.0991988312737268),
+    ('gbar_Kv3_1somatic', 0.6858821519253318),
+    ('gbar_Imsomatic', 0.0027928441446724342),
+    ('gbar_SKsomatic', 0.0005593069095831891),
+    ('decay_CaDynamicssomatic', 51.65275194349207),
+    ('gbar_Ca_HVAsomatic', 0.0013835269053280533),
+    ('gbar_Ca_LVAsomatic', 0.008195589518136578),
+    ('gbar_Ihall', 2.9188677128419964e-05),
+    ('gbar_NaTgaxonal', 0.589595831691907),
+    ('gbar_Napaxonal', 3.0224981881117188e-05),
+    ('gbar_K_Paxonal', 0.12712789028145766),
+    ('gbar_K_Taxonal', 0.03560137490949835),
+    ('gbar_Kv3_1axonal', 1.9712478158951352),
+    ('gbar_Imaxonal', 0.008285462286295373),
+    ('gbar_SKaxonal', 0.003019440497348984),
+    ('decay_CaDynamicsaxonal', 131.66155256486186),
+    ('gbar_Ca_HVAaxonal', 0.006045560523680229),
+    ('gbar_Ca_LVAaxonal', 0.007704677526700455)]
+Best #1 Fitness values: 
+824.2822140762169

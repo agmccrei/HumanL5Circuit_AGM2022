@@ -1,0 +1,207 @@
+//initialization
+load_file("nrngui.hoc")
+load_file("import3d.hoc")
+load_file("models/Biophys.hoc")
+load_file("models/HNTemplate.hoc")
+load_file("cell_functions.hoc")
+
+//======================== settings ===================================
+
+objref cell
+strdef cell_type
+strdef file_name
+
+//===========config section, change for each run=======================
+	
+	saving = 1 // 1 to save, 0 to not
+	cell_type = "HL5PN1" // define cell type
+	step_inc = -0.05
+	step_max = 0
+	step_min = -0.4
+
+//==========================================================================
+
+v_init = -69.5578657981518
+tstop = 2000
+celsius = 34
+
+//==========================================================================
+strdef os, exp_s
+objref fileref, temp_vec, target_trace_list, currents_exp, sag_amps_exp, v_amps_exp, tvec_exp
+temp_vec = new Vector()
+currents_exp = new Vector(5)
+sag_amps_exp = new Vector(0)
+v_amps_exp = new Vector(0)
+target_trace_list = new List()
+os = "L5PNy_target_step"
+
+currents_exp.x[0] = -0.090
+currents_exp.x[1] = -0.070
+currents_exp.x[2] = -0.050
+currents_exp.x[3] = -0.030
+currents_exp.x[4] = 0
+
+sprint(exp_s,"%s_tvec.txt",os)
+tvec_exp = new Vector()
+fileref = new File(exp_s)
+fileref.ropen
+tvec_exp.scanf(fileref)
+fileref.close
+
+for i=0, 3	{
+	sprint(exp_s,"%s_%d.txt",os,i)
+	temp_vec = new Vector()
+	fileref = new File(exp_s)
+	fileref.ropen
+	temp_vec.scanf(fileref)
+	fileref.close
+	target_trace_list.append(temp_vec)
+	
+	i0 = tvec_exp.c.indwhere(">=",270/2)
+	v0 = temp_vec.x[i0]
+	i1 = tvec_exp.c.indwhere(">=",270 + 1000/2)
+	i2 = tvec_exp.c.indwhere(">=",1269)
+	i3 = tvec_exp.c.indwhere(">=",270)
+	i4 = tvec_exp.c.indwhere(">=",270+100)
+	ssshift = temp_vec.mean(i1,i2)
+	v_amps_exp.append(temp_vec.x[i1] - v0)
+	sag_amps_exp.append(ssshift - temp_vec.min(i3,i4))
+	print "EXP: I_stim = ", currents_exp.x[i] ," v_rest = ", v0, " v_amp = ", v_amps_exp.x[v_amps_exp.size()-1], " sag_amp = ", sag_amps_exp.x[sag_amps_exp.size()-1]
+}
+v_amps_exp.append(0)
+sag_amps_exp.append(0)
+
+if (saving == 1){
+	strdef save_voltage, save_sag, save_current
+	sprint (save_voltage, "simdata/voltage_exp_%s.txt", cell_type)
+	sprint (save_sag, "simdata/sag_exp_%s.txt", cell_type)
+	sprint (save_current, "simdata/current_exp_%s.txt", cell_type)
+	save_vec(save_voltage, v_amps_exp)
+	save_vec(save_sag, sag_amps_exp)
+	save_vec(save_current, currents_exp)
+}
+
+//=================== creating cell object and simulation settings ===========================
+cell = init_cell(cell_type)
+
+//
+objref s
+s = show_cell(cell)
+
+objref d,gih
+d = new Vector()
+gih = new Vector()
+forsec cell.all {
+	d2 = distance(1)
+	d.append(d2)
+	gih.append(gbar_Ih(1))
+}
+
+objref g2
+g2 = new Graph()
+graphList[0].append(g2)
+for(i=0 ; i < gih.size() ; i+=1){
+	g2.mark(d.x[i],gih.x[i],"o",6)
+}
+g2.exec_menu ("View = plot")
+//
+
+//==================== stimulus settings ===========================
+
+objref st1
+
+access cell.soma
+st1 = new IClamp(0.5)
+st1.dur = 1000
+st1.del = 270
+st1.amp = 0
+
+cell.soma st1
+
+//==================== record settings ==========================
+
+objref vvec, tvec
+vvec = new Vector()
+tvec = new Vector()
+
+access cell.soma
+tvec.record(&t)
+vvec.record(&v(0.5))
+
+//======================= plot settings ============================
+
+objref gV
+// graphs voltage vs time
+gV = new Graph()
+gV.size(0,tstop,-100,60)
+graphList[0].append(gV)
+access cell.soma
+gV.addvar("soma","v(0.5)",1,1)
+
+//============================= simulation ================================
+
+objref currents, v_amps, sag_amps, sag_ratios
+
+currents = new Vector()
+v_amps = new Vector()
+sag_amps = new Vector()
+sag_ratios = new Vector()
+
+for(step_amp = step_max; step_amp >= step_min; step_amp+=step_inc){
+	st1.amp = step_amp
+	currents.append(step_amp)
+	init()
+	run()
+	i0 = tvec.c.indwhere(">=",st1.del/2)
+	v0 = vvec.x[i0]
+	i1 = tvec.c.indwhere(">=",st1.del + st1.dur/2)
+	i2 = tvec.c.indwhere(">=",st1.del + st1.dur-1)
+	i3 = tvec.c.indwhere(">=",st1.del)
+	i4 = tvec.c.indwhere(">=",st1.del+100)
+	ssshift = vvec.mean(i1,i2)
+	v_amps.append(vvec.x[i1] - v0)
+	sag_amps.append(ssshift - vvec.min(i3,i4))
+	sag_ratios.append(sag_amps.x[sag_amps.size()-1]/(v0-vvec.min(i3,i4)))
+	print "I_stim = ", st1.amp ," v_rest = ", v0, " v_amp = ", v_amps.x[v_amps.size()-1], " sag_amp = ", sag_amps.x[sag_amps.size()-1], " sag_ratio = ", sag_ratios.x[sag_ratios.size()-1]
+	if (st1.amp == -0.4){
+		strdef save_vvec
+		sprint (save_vvec, "simdata/%s_vvec_IV_1.txt", cell_type)
+		save_vec(save_vvec, vvec)
+	}
+	if (st1.amp == -0.3){
+		strdef save_vvec
+		sprint (save_vvec, "simdata/%s_vvec_IV_2.txt", cell_type)
+		save_vec(save_vvec, vvec)
+	}
+	if (st1.amp == -0.2){
+		strdef save_vvec
+		sprint (save_vvec, "simdata/%s_vvec_IV_3.txt", cell_type)
+		save_vec(save_vvec, vvec)
+	}
+	if (st1.amp == -0.1){
+		strdef save_vvec
+		sprint (save_vvec, "simdata/%s_vvec_IV_4.txt", cell_type)
+		save_vec(save_vvec, vvec)
+	}
+}
+strdef save_tvec
+sprint (save_tvec, "simdata/%s_tvec_IV.txt", cell_type)
+save_vec(save_tvec, tvec)
+
+print "IV slope = ", v_amps.x[v_amps.size()-1]/(currents.x[currents.size()-1]*1000)
+
+if (saving == 1){
+	strdef save_voltage, save_sag, save_current, save_sagratios
+	v_amps = v_amps.reverse()
+	sag_amps = sag_amps.reverse()
+	sag_ratios = sag_ratios.reverse()
+	currents = currents.reverse()
+	sprint (save_voltage, "simdata/voltage_%s.txt", cell_type)
+	sprint (save_sag, "simdata/sag_%s.txt", cell_type)
+	sprint (save_current, "simdata/current_%s.txt", cell_type)
+	sprint (save_sagratios, "simdata/sag_ratio_%s.txt", cell_type)
+	save_vec(save_voltage, v_amps)
+	save_vec(save_sag, sag_amps)
+	save_vec(save_current, currents)
+	save_vec(save_sagratios, sag_ratios)
+}
