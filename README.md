@@ -6,6 +6,7 @@ This is the readme for the model associated with the paper:
 
 Guet-McCreight A, Chameh HM, Mahallati S, Wishart M, Tripathy SJ, Valiante TA, Hay E (2022) Age-dependent increased sag amplitude in human pyramidal neurons dampens baseline cortical activity. Cerebral Cortex.
 
+UPDATE: Added "L5Circuit - NEURON 9" folder for code updated to work in NEURON 9.0.2 and LFPy 2.3.5, including mod files (Modified 2026-09-24 by Valis Sowilo - github.com/ValisSowilo), circuit.py, and circuit\_functions.py.
 
 Network Simulations:
 Simulation code associated with the default L5 circuit used throughout the manuscript is in the /L5Circuit/default_circuit/ directory. Additional tests using heterogeneous circuits can be found in the /L5Circuit/heterogeneous/ directory.
